@@ -46,6 +46,8 @@ namespace lab3
 			{
 				longMas[i] = random.Next(100000, 100000000);
 			}
+			Console.WriteLine(Interlocked.CompareExchange(ref temporaryXOR, 3, 2));
+			
 			//XOR
 			Parallel.For(0, intMas.Length, ArrayXOR);
 			Console.WriteLine("Result: "+temporaryXOR);
@@ -53,11 +55,13 @@ namespace lab3
 			{
 				Console.WriteLine(Convert.ToString(el, 2) + " ");
 			}
+
 			////MINMAX
 			//Parallel.For(0, longMas.Length, MinMaxValues);
 			//Console.WriteLine("Max: " + max + " Index: " + indexMax);
 			//Console.WriteLine("Min: " + min + " Index: " + indexMin);
 			//Console.WriteLine("Max: " + longMas.Max() + " Min: " + longMas.Min());
+
 			////LEnght
 			//Parallel.Invoke(ArrayLenght);
 			//Console.WriteLine(lenght);

@@ -11,39 +11,25 @@ namespace lab2
 	{
 		static void Main()
 		{
+			int cpuCount=4;
+			CPU cpu;
 			int capacity = 2;
 			int processCount = 30;
 			Queue queue = new Queue(capacity);
 			ProcessFactory factory = new ProcessFactory(queue,processCount);
-			CPU cpu1 = new CPU(queue);
-			CPU cpu2 = new CPU(queue);
-			CPU cpu3 = new CPU(queue);
-			CPU cpu4 = new CPU(queue);
 			new Thread(factory.Run).Start();
-			//for(int i=0;i<4;i++)
-			//{
-			//	Thread thread = new Thread(new CPU(queue).Run);
-			//	thread.Name = $"{i}";
-			//	thread.Start(
-			//}
-			Thread thread1 = new Thread(cpu1.Run);
-			Thread thread2=new Thread(cpu2.Run);
-			Thread thread3=new Thread(cpu3.Run);
-			Thread thread4=new Thread(cpu4.Run);
-			thread1.Name = "1";
-			thread2.Name = "2";
-			thread3.Name = "3";
-			thread4.Name = "4";
-			thread1.Start();
-			thread2.Start();
-			thread3.Start();
-			thread4.Start();
+			for (int i = 0; i < cpuCount; i++)
+			{
+				cpu = new CPU(queue);
+				Thread thread = new Thread(cpu.Run);
+				thread.Name = $"{i}";
+				thread.Start();
+			}
 			Console.ReadKey();
 		}
 	}
 	class ProcessFactory
 	{
-		
 		Queue queue;
 		int processCount;
 		int generateDelay;
@@ -85,17 +71,17 @@ namespace lab2
 						break;
 					queue.Get(processTime);
 					Thread.Sleep(processTime);
-					processesDone[Convert.ToInt32(Thread.CurrentThread.Name) - 1]++;
-					Console.WriteLine($"{Thread.CurrentThread.Name}: {processTime}");
+					processesDone[Convert.ToInt32(Thread.CurrentThread.Name)]++;
+					Console.WriteLine($"CPU {Thread.CurrentThread.Name} time: {processTime}");
 				}
 				catch(Exception)
 				{
-					Console.WriteLine("Exception");
+					Console.WriteLine("Queue is empty");
 				}
 			}
 			queue.emptyQueueEvent.Set();
 			Console.WriteLine("Well done");
-			Console.WriteLine($"{Thread.CurrentThread.Name}: "+processesDone[Convert.ToInt32(Thread.CurrentThread.Name) - 1]*100/30d+"%");
+			Console.WriteLine($"{Thread.CurrentThread.Name}: "+processesDone[Convert.ToInt32(Thread.CurrentThread.Name)]*100/30d+"%");
 		}
 	}
 	class Queue

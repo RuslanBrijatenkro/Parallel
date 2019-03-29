@@ -24,11 +24,11 @@ namespace lab4
 			await Task.WhenAll(new[] { t1, t2, t3 });
 
 			Console.WriteLine("Collection1: ");
-			await Task.Run(() => GetArray(collection1));
+			await Task.Run(() => Print(collection1));
 			Console.WriteLine("Collection2: ");
-			await Task.Run(() => GetArray(collection2));
+			await Task.Run(() => Print(collection2));
 			Console.WriteLine("Collection3: ");
-			await Task.Run(() => GetArray(collection3));
+			await Task.Run(() => Print(collection3));
 
 			t1 = Task.Run(() => Multiplication());
 			t2 = Task.Run(() => LeaveEven());
@@ -36,18 +36,27 @@ namespace lab4
 			await Task.WhenAll(new[] { t1, t2, t3 });
 
 			Console.WriteLine("Collection1: ");
-			await Task.Run(() => GetArray(collection1));
+			await Task.Run(() => Print(collection1));
 			Console.WriteLine("Collection2: ");
-			await Task.Run(() => GetArray(collection2));
+			await Task.Run(() => Print(collection2));
 			Console.WriteLine("Collection3: ");
-			await Task.Run(() => GetArray(collection3));
+			await Task.Run(() => Print(collection3));
 
 			t1 = Task.Run(() => collection1.Sort());
 			t2 = Task.Run(() => collection2.Sort());
 			t3 = Task.Run(() => collection3.Sort());
 			await Task.WhenAll(new[] { t1, t2, t3 });
+
+			Console.WriteLine("Collection1: ");
+			await Task.Run(() => Print(collection1));
+			Console.WriteLine("Collection2: ");
+			await Task.Run(() => Print(collection2));
+			Console.WriteLine("Collection3: ");
+			await Task.Run(() => Print(collection3));
+
+
 		}
-		void GetArray(List<int> collection)
+		void Print(List<int> collection)
 		{
 			for(int i=0;i<collection.Count;i++)
 			{

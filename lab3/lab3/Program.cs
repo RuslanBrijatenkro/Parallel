@@ -26,8 +26,8 @@ namespace lab3
 
 		static long lenght = 0;
 
-		static long min;
-		static long max;
+		static long min=100000000;
+		static long max= -100000;
 		static int indexMin;
 		static int indexMax;
 
@@ -44,17 +44,16 @@ namespace lab3
 			}
 			for (int i = 0; i < longMas.Length; i++)
 			{
-				longMas[i] = random.Next(100000, 100000000);
+				longMas[i] = random.Next((int)max, (int)min);
 			}
-			Console.WriteLine(Interlocked.CompareExchange(ref temporaryXOR, 3, 2));
-			
+
 			//XOR
-			Parallel.For(0, intMas.Length, ArrayXOR);
-			Console.WriteLine("Result: "+temporaryXOR);
-			foreach (var el in intMas)
-			{
-				Console.WriteLine(Convert.ToString(el, 2) + " ");
-			}
+			//Parallel.For(0, intMas.Length, ArrayXOR);
+			//Console.WriteLine("Result: "+temporaryXOR);
+			//foreach (var el in intMas)
+			//{
+			//	Console.WriteLine(Convert.ToString(el, 2) + " ");
+			//}
 
 			////MINMAX
 			//Parallel.For(0, longMas.Length, MinMaxValues);
@@ -66,7 +65,7 @@ namespace lab3
 			//Parallel.Invoke(ArrayLenght);
 			//Console.WriteLine(lenght);
 			//Console.WriteLine(intMas.Length);
-			
+
 		}
 		static void ArrayLenght()
 		{
@@ -102,23 +101,28 @@ namespace lab3
 		}
 		static void MinMaxValues(int x)
 		{
-			if(x==0)
+			long oldValueMax=0, newValueMax=0, oldValueMin = 0, newValueMin = 0;
+			do
 			{
-				Interlocked.Exchange(ref max, longMas[x]);
-				indexMax = x;
-				Interlocked.Exchange(ref min, longMas[x]);
+				Interlocked.Exchange(ref oldValueMin, min);
+				Interlocked.Exchange(ref newValueMin, longMas[x]);
+				if (Interlocked.Read(ref newValueMin) >= Interlocked.Read(ref oldValueMin))
+					break;
 				indexMin = x;
 			}
-			if (Interlocked.Read(ref longMas[x]) > Interlocked.Read(ref max))
+			while (Interlocked.Read(ref oldValueMin) != Interlocked.CompareExchange(ref min, newValueMin, oldValueMin));
+
+			do
 			{
-				Interlocked.Exchange(ref max, longMas[x]);
+				Interlocked.Exchange(ref oldValueMax, max);
+				Interlocked.Exchange(ref newValueMax, longMas[x]);
+				if (Interlocked.Read(ref newValueMax) <= Interlocked.Read(ref oldValueMax))
+					break;
 				indexMax = x;
 			}
-			if (Interlocked.Read(ref longMas[x]) < Interlocked.Read(ref min))
-			{
-				Interlocked.Exchange(ref min, longMas[x]);
-				indexMin = x;
-			}
+			while (Interlocked.Read(ref oldValueMax) != Interlocked.CompareExchange(ref max, newValueMax, oldValueMax));
+
+			
 		}
 
 	}

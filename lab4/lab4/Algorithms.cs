@@ -16,6 +16,7 @@ namespace lab4
 		List<int> collection1 = new List<int>();
 		List<int> collection2 = new List<int>();
 		List<int> collection3 = new List<int>();
+		List<int> concatCollection = new List<int>();
 		async public void RunAsync()
 		{
 			Task t1 = Task.Run(() => FillList(collection1));
@@ -54,7 +55,20 @@ namespace lab4
 			Console.WriteLine("Collection3: ");
 			await Task.Run(() => Print(collection3));
 
+			await Task.Run(() => Concat());
+			Console.WriteLine("ConcatCollection: ");
+			await Task.Run(() => Print(concatCollection));
 
+		}
+		void Concat()
+		{
+			for(int i=0;i<collection1.Count;i++)
+			{
+				if(collection2.Contains(collection1[i])&&!collection3.Contains(collection1[i]))
+				{
+					concatCollection.Add(collection1[i]);
+				}
+			}
 		}
 		void Print(List<int> collection)
 		{
@@ -66,9 +80,8 @@ namespace lab4
 		}
 		void FillList(List<int> collection)
 		{
-			Thread.Sleep(100);
 			for(int i=0;i<listsCount;i++)
-				collection.Add(random.Next(1,100));
+				collection.Add(random.Next(1,20));
 		}
 		void Multiplication()
 		{

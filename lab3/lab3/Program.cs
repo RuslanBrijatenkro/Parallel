@@ -33,7 +33,7 @@ namespace lab3
 
 		public Algorithms()
 		{
-			intMas = new int[random.Next(5, 10)];
+			intMas = new int[random.Next(50, 100)];
 			longMas = new long[random.Next(5000, 5001)];
 		}
 		public void Run()
@@ -61,13 +61,13 @@ namespace lab3
 			//Console.WriteLine("Min: " + min + " Index: " + indexMin);
 			//Console.WriteLine("Max: " + longMas.Max() + " Min: " + longMas.Min());
 
-			////LEnght
-			//Parallel.Invoke(ArrayLenght);
-			//Console.WriteLine(lenght);
-			//Console.WriteLine(intMas.Length);
+			//LEnght
+			Parallel.Invoke(ArrayLength);
+			Console.WriteLine(lenght);
+			Console.WriteLine(intMas.Length);
 
 		}
-		static void ArrayLenght()
+		static void ArrayLength()
 		{
 			while(true)
 			{
@@ -76,13 +76,13 @@ namespace lab3
 					long oldValue, newValue;
 					do
 					{
-						oldValue = lenght;
-						newValue = Interlocked.Increment(ref lenght);
-						intMas[newValue]++;
+						oldValue = Interlocked.Read(ref lenght);
+						newValue = oldValue++;
+						intMas[oldValue]++;
 					}
 					while (oldValue != Interlocked.CompareExchange(ref lenght, newValue, oldValue));
 				}
-				catch(Exception e)
+				catch(IndexOutOfRangeException)
 				{
 					break;
 				}
@@ -121,8 +121,6 @@ namespace lab3
 				indexMax = x;
 			}
 			while (Interlocked.Read(ref oldValueMax) != Interlocked.CompareExchange(ref max, newValueMax, oldValueMax));
-
-			
 		}
 
 	}

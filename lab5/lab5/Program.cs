@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace lab5
 {
@@ -12,99 +12,163 @@ namespace lab5
 	{
 		static void Main(string[] args)
 		{
+			Thread thread;
 			startSwitch:
 			Console.WriteLine("1-Server, 2-Client");
 			switch(Console.ReadLine())
 			{
 				case "1":
 					Server server = new Server();
-					server.Run();
+					thread = new Thread(server.Run);
+					thread.Start();
 					break;
 				case "2":
 					Client client = new Client();
-					client.Run();
+					thread = new Thread(client.Run);
+					thread.Start();
 					break;
 				default:
 					Console.WriteLine("Uncorrect number");
 					goto startSwitch;
 			}
-			Console.ReadKey();
+			thread.Join();
 		}
 	}
 	class Client
 	{
-		public void Run()
+		public string id;
+		TcpClient client;
+		NetworkStream stream;
+		public void ReadMessage()
 		{
-			IPHostEntry ipHost = Dns.GetHostEntry("localhost");
-			IPAddress ipAddr = ipHost.AddressList[0];
-			IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, 11000);
 			try
 			{
-				TcpListener listener = new TcpListener(ipEndPoint);
-				listener.Start(1);
-
-				while (true)
+				while(true)
 				{
-					Console.WriteLine("Client waiting: {0}", listener.LocalEndpoint);
-					TcpClient client = listener.AcceptTcpClient();
-					NetworkStream io = client.GetStream();
-					byte[] bytes = new byte[1024];
-					io.Read(bytes,0,bytes.Length);
-					string data = null;
-					data += Encoding.ASCII.GetString(bytes);
-					Console.WriteLine(data);
-					Console.WriteLine("End");
-					client.Close();
+					if(stream.DataAvailable)
+					{
+						byte[] message = new byte[64];
+						string data = null;
+						while (stream.DataAvailable)
+						{
+							stream.Read(message, 0, message.Length);
+							data += Encoding.ASCII.GetString(message);
+						}
+						Console.WriteLine("Message from server: "+data);
+					}
 				}
 			}
-			catch (Exception e)
+			catch(Exception e)
 			{
-				Console.WriteLine("Произошла ошибка {0}", e.Message);
+				Console.WriteLine(e.Message);
 			}
+			finally
+			{
+				if (stream != null)
+					stream.Close();
+				if (client != null)
+					client.Close();
+			}
+		}
+		public void Run()
+		{
+			client = new TcpClient("localhost",11000);
+			try
+			{
+				id = Guid.NewGuid().ToString();
+				stream = client.GetStream();
+				byte[] message = Encoding.ASCII.GetBytes(id);
+				stream.Write(message, 0, message.Length);
+				Task.Factory.StartNew(ReadMessage);
+				while(Console.ReadLine()!="end")
+					Console.WriteLine("Entry 'end' to exit");
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				if(stream!=null)
+					stream.Close();
+				if (client != null)
+					client.Close();
+			}
+		}
+	}
+	class ClientObject
+	{
+		string id;
+		NetworkStream stream;
+		public ClientObject(NetworkStream stream)
+		{
+			this.stream = stream;
+		}
+		public void Run()
+		{
+			byte[] buffer = new byte[64];
+			while(stream.DataAvailable)
+			{
+				stream.Read(buffer, 0, buffer.Length);
+				id += buffer.ToString();
+			}
+		}
+		public void SendMessage(string message)
+		{
+			byte[] buffer = Encoding.ASCII.GetBytes(message);
+			stream.Write(buffer,0,buffer.Length);
 		}
 	}
 	class Server
 	{
-		static IPHostEntry ipHost = Dns.GetHostEntry("localhost");
-		static IPAddress ipAddr = ipHost.AddressList[0];
-		IPEndPoint ipEndPoint = new IPEndPoint(ipAddr, 11000);
+		List<ClientObject> clientObjects;
+		NetworkStream stream;
+		TcpListener tcpListener;
+		TcpClient client;
 		public void Run()
 		{
-
-			Socket serverSocket = new Socket(ipAddr.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 			try
 			{
-				serverSocket.Bind(ipEndPoint);
-				serverSocket.Listen(10);
+				clientObjects = new List<ClientObject>();
+				tcpListener = new TcpListener(IPAddress.Parse("127.0.0.1"), 11000);
+				tcpListener.Start();
+				ListenerAsync();
 				while(true)
 				{
-					Console.WriteLine("Waiting for client...");
-					Socket listener = serverSocket.Accept();
-					byte[] message = Encoding.ASCII.GetBytes("Connection successful!");
-					listener.Send(message);
+					client=tcpListener.AcceptTcpClient();
+					stream = client.GetStream();
+					ClientObject clientObject = new ClientObject(stream);
+					clientObjects.Add(clientObject);
+					Task.Factory.StartNew(clientObject.Run);
 				}
 			}
-			catch (Exception e)
+			catch(Exception e)
 			{
 				Console.WriteLine(e.Message);
 			}
+			finally
+			{
+				if (stream != null)
+					stream.Close();
+				if (client != null)
+					client.Close();
+			}
+
 		}
-		async void SendMessageAsync()
+		async void ListenerAsync()
 		{
-			await Task.Run(() => SendMessage());
+			await Task.Factory.StartNew(Listener);
 		}
-		void SendMessage()
+		void Listener()
 		{
-			TcpClient server = new TcpClient(ipEndPoint);
-			server.Connect(ipAddr,11000);
 			while(true)
 			{
-				NetworkStream write = server.GetStream();
-				Console.WriteLine("Enter message:");
-				string msg = Console.ReadLine();
-				byte[] message = Encoding.ASCII.GetBytes(msg);
-				write.Write(message,0,message.Length);
-
+				Console.WriteLine("Entry message: ");
+				string message = Console.ReadLine();
+				foreach (var clientObject in clientObjects)
+				{
+					clientObject.SendMessage(message);
+				}
 			}
 		}
 	}

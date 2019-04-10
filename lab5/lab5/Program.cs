@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO;
 
 namespace lab5
 {
@@ -45,6 +46,7 @@ namespace lab5
 			{
 				while(true)
 				{
+					Thread.Sleep(50);
 					if(stream.DataAvailable)
 					{
 						byte[] message = new byte[64];
@@ -76,6 +78,7 @@ namespace lab5
 			try
 			{
 				id = Guid.NewGuid().ToString();
+				Console.WriteLine(id);
 				stream = client.GetStream();
 				byte[] message = Encoding.ASCII.GetBytes(id);
 				stream.Write(message, 0, message.Length);
@@ -98,7 +101,7 @@ namespace lab5
 	}
 	class ClientObject
 	{
-		string id;
+		public string id;
 		NetworkStream stream;
 		public ClientObject(NetworkStream stream)
 		{
@@ -106,17 +109,24 @@ namespace lab5
 		}
 		public void Run()
 		{
-			byte[] buffer = new byte[64];
-			while(stream.DataAvailable)
-			{
-				stream.Read(buffer, 0, buffer.Length);
-				id += buffer.ToString();
-			}
+			id = null;
+			byte[] buffer = new byte[32];
+			stream.Read(buffer, 0, buffer.Length);
+			id += Encoding.ASCII.GetString(buffer);
+			Console.WriteLine(id);
+			WriteId(id);
 		}
 		public void SendMessage(string message)
 		{
 			byte[] buffer = Encoding.ASCII.GetBytes(message);
 			stream.Write(buffer,0,buffer.Length);
+		}
+		void WriteId(string id)
+		{
+			using (StreamWriter streamWriter = new StreamWriter(@"C:\Users\brija\Desktop\'.net'\Parallel\lab5\lab5\id.txt",true))
+			{
+				streamWriter.Write(id+" ");
+			}
 		}
 	}
 	class Server
@@ -165,9 +175,18 @@ namespace lab5
 			{
 				Console.WriteLine("Entry message: ");
 				string message = Console.ReadLine();
+				string data = null;
+				using (StreamReader streamReader = new StreamReader(@"C:\Users\brija\Desktop\'.net'\Parallel\lab5\lab5\id.txt"))
+				{
+					while(!streamReader.EndOfStream)
+					{
+						data=streamReader.ReadToEnd();
+					}
+				}
 				foreach (var clientObject in clientObjects)
 				{
-					clientObject.SendMessage(message);
+					if(data.Contains(clientObject.id))
+						clientObject.SendMessage(message);
 				}
 			}
 		}
